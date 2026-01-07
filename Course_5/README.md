@@ -425,4 +425,5 @@ await user.destroy({ force: true });
 
 ## 📦 完整代码
 
-👉 [GitHub - Course_5](https://github.com/Juhao978/node-learning/tree/main/Course_5)
+- [GitHub - Course_5](https://github.com/Juhao978/node-learning/tree/main/Course_5)
+- [Gitee - Course_5](https://gitee.com/Juhao978/node-learning/tree/main/Course_5)

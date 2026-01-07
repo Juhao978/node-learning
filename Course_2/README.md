@@ -572,4 +572,5 @@ const rateLimiter = (req, res, next) => {
 
 ## 📦 完整代码
 
-👉 [GitHub - Course_2](https://github.com/Juhao978/node-learning/tree/main/Course_2)
+- [GitHub - Course_2](https://github.com/Juhao978/node-learning/tree/main/Course_2)
+- [Gitee - Course_2](https://gitee.com/Juhao978/node-learning/tree/main/Course_2)

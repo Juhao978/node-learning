@@ -473,4 +473,5 @@ if (existingUser) {
 
 ## 📦 完整代码
 
-👉 [GitHub - Course_4](https://github.com/Juhao978/node-learning/tree/main/Course_4)
+- [GitHub - Course_4](https://github.com/Juhao978/node-learning/tree/main/Course_4)
+- [Gitee - Course_4](https://gitee.com/Juhao978/node-learning/tree/main/Course_4)

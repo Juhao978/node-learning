@@ -379,4 +379,5 @@ app.get('/users', (req, res) => {
 
 ## 📦 完整代码
 
-👉 [GitHub - Course_1](https://github.com/Juhao978/node-learning/tree/main/Course_1)
+- [GitHub - Course_1](https://github.com/Juhao978/node-learning/tree/main/Course_1)
+- [Gitee - Course_1](https://gitee.com/Juhao978/node-learning/tree/main/Course_1)

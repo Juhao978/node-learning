@@ -417,4 +417,5 @@ router.delete('/:id', authMiddleware, productController.deleteProduct);
 
 ## 📦 完整代码
 
-👉 [GitHub - Course_3](https://github.com/Juhao978/node-learning/tree/main/Course_3)
+- [GitHub - Course_3](https://github.com/Juhao978/node-learning/tree/main/Course_3)
+- [Gitee - Course_3](https://gitee.com/Juhao978/node-learning/tree/main/Course_3)

@@ -225,4 +225,5 @@ Course_8/my-node-api/
 
 ## 📦 完整代码
 
-👉 [GitHub - Course_8](https://github.com/Juhao978/node-learning/tree/main/Course_8)
+- [GitHub - Course_8](https://github.com/Juhao978/node-learning/tree/main/Course_8)
+- [Gitee - Course_8](https://gitee.com/Juhao978/node-learning/tree/main/Course_8)

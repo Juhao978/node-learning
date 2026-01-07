@@ -381,4 +381,5 @@ const upload = multer({
 
 ## 📦 完整代码
 
-👉 [GitHub - Course_7](https://github.com/Juhao978/node-learning/tree/main/Course_7)
+- [GitHub - Course_7](https://github.com/Juhao978/node-learning/tree/main/Course_7)
+- [Gitee - Course_7](https://gitee.com/Juhao978/node-learning/tree/main/Course_7)

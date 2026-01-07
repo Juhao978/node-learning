@@ -400,4 +400,5 @@ const login = async (req, res) => {
 
 ## 📦 完整代码
 
-👉 [GitHub - Course_6](https://github.com/Juhao978/node-learning/tree/main/Course_6)
+- [GitHub - Course_6](https://github.com/Juhao978/node-learning/tree/main/Course_6)
+- [Gitee - Course_6](https://gitee.com/Juhao978/node-learning/tree/main/Course_6)
