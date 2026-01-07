@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第4课：数据验证测试</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #2d1f3d 0%, #1a1a2e 100%);
+      min-height: 100vh;
+      color: #e4e4e7;
+      padding: 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { text-align: center; color: #f472b6; margin-bottom: 10px; }
+    .subtitle { text-align: center; color: #94a3b8; margin-bottom: 30px; }
+    
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+    
+    .panel {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .panel h2 { color: #f472b6; margin-bottom: 15px; }
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; color: #94a3b8; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      background: rgba(0,0,0,0.3);
+      color: white;
+    }
+    .form-group small { color: #94a3b8; font-size: 12px; }
+    
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover { transform: translateY(-2px); }
+    .btn-primary { background: #f472b6; color: white; }
+    .btn-success { background: #22c55e; color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-warning { background: #f59e0b; color: white; }
+    
+    #response {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 15px;
+      font-family: monospace;
+      font-size: 13px;
+      min-height: 300px;
+      max-height: 500px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    
+    .error { color: #ef4444; }
+    .success { color: #22c55e; }
+    
+    .validation-rules {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      font-size: 13px;
+    }
+    .validation-rules h3 { color: #f472b6; margin-bottom: 10px; }
+    .validation-rules li { margin-bottom: 5px; color: #94a3b8; }
+    .validation-rules code {
+      background: rgba(244,114,182,0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    
+    .test-case {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .test-case h4 { color: #94a3b8; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✅ 第4课：数据验证 & 错误处理</h1>
+    <p class="subtitle">使用 Joi 进行数据验证，体验各种错误场景</p>
+    
+    <div class="layout">
+      <!-- 左侧：测试表单 -->
+      <div>
+        <div class="panel">
+          <h2>📝 创建用户测试</h2>
+          
+          <div class="validation-rules">
+            <h3>验证规则：</h3>
+            <ul>
+              <li><code>name</code>：必填，2-50个字符</li>
+              <li><code>email</code>：必填，有效邮箱格式</li>
+              <li><code>age</code>：可选，1-150的整数</li>
+              <li><code>role</code>：可选，admin/user/guest</li>
+              <li><code>password</code>：必填，6-30字符，含大小写和数字</li>
+            </ul>
+          </div>
+          
+          <div class="form-group">
+            <label>姓名 *</label>
+            <input type="text" id="name" placeholder="至少2个字符">
+          </div>
+          
+          <div class="form-group">
+            <label>邮箱 *</label>
+            <input type="email" id="email" placeholder="valid@email.com">
+          </div>
+          
+          <div class="form-group">
+            <label>年龄</label>
+            <input type="number" id="age" placeholder="1-150">
+          </div>
+          
+          <div class="form-group">
+            <label>角色</label>
+            <select id="role">
+              <option value="user">user</option>
+              <option value="admin">admin</option>
+              <option value="guest">guest</option>
+              <option value="invalid">invalid（测试错误）</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>密码 *</label>
+            <input type="text" id="password" placeholder="含大小写字母和数字">
+            <small>必须包含大写、小写和数字</small>
+          </div>
+          
+          <button class="btn-primary" onclick="createUser()">创建用户</button>
+          <button class="btn-success" onclick="fillValid()">填入有效数据</button>
+          <button class="btn-warning" onclick="fillInvalid()">填入无效数据</button>
+        </div>
+        
+        <div class="panel" style="margin-top: 20px;">
+          <h2>🧪 错误场景测试</h2>
+          
+          <div class="test-case">
+            <h4>404 错误</h4>
+            <button class="btn-danger" onclick="test404()">访问不存在的接口</button>
+            <button class="btn-danger" onclick="testNotFoundUser()">获取不存在的用户</button>
+          </div>
+          
+          <div class="test-case">
+            <h4>验证错误 (400)</h4>
+            <button class="btn-warning" onclick="testEmptyBody()">空请求体</button>
+            <button class="btn-warning" onclick="testInvalidEmail()">无效邮箱</button>
+          </div>
+          
+          <div class="test-case">
+            <h4>服务器错误 (500)</h4>
+            <button class="btn-danger" onclick="testServerError()">触发服务器错误</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 右侧：响应结果 -->
+      <div>
+        <div class="panel">
+          <h2>📤 响应结果</h2>
+          <div id="response">点击按钮测试验证功能...
+
+💡 提示：
+1. 先点击"填入无效数据"，再点"创建用户"查看验证错误
+2. 点击"填入有效数据"测试成功创建
+3. 尝试各种错误场景</div>
+        </div>
+        
+        <div class="panel" style="margin-top: 20px;">
+          <h2>📚 前端类比</h2>
+          <div style="font-size: 14px; color: #94a3b8; line-height: 1.8;">
+            <p><strong>Joi 验证 ≈ ElementUI 表单验证</strong></p>
+            <p style="margin-top: 10px;">ElementUI:</p>
+            <pre style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; overflow-x: auto;">
+rules: {
+  name: [
+    { required: true, message: '请输入姓名' },
+    { min: 2, max: 50, message: '长度2-50' }
+  ],
+  email: [
+    { type: 'email', message: '邮箱格式不正确' }
+  ]
+}</pre>
+            <p style="margin-top: 10px;">Joi:</p>
+            <pre style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; overflow-x: auto;">
+Joi.object({
+  name: Joi.string().min(2).max(50).required(),
+  email: Joi.string().email().required()
+})</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const API = 'http://localhost:3000/api';
+    
+    function show(data, isError = false) {
+      const el = document.getElementById('response');
+      const text = JSON.stringify(data, null, 2);
+      el.innerHTML = `<span class="${isError ? 'error' : 'success'}">${text}</span>`;
+    }
+    
+    function fillValid() {
+      document.getElementById('name').value = '张三';
+      document.getElementById('email').value = 'zhangsan@test.com';
+      document.getElementById('age').value = '25';
+      document.getElementById('role').value = 'user';
+      document.getElementById('password').value = 'Password123';
+    }
+    
+    function fillInvalid() {
+      document.getElementById('name').value = 'A';  // 太短
+      document.getElementById('email').value = 'invalid-email';  // 格式错误
+      document.getElementById('age').value = '200';  // 超出范围
+      document.getElementById('role').value = 'invalid';  // 无效枚举
+      document.getElementById('password').value = '123';  // 太简单
+    }
+    
+    async function createUser() {
+      const data = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        age: parseInt(document.getElementById('age').value) || undefined,
+        role: document.getElementById('role').value,
+        password: document.getElementById('password').value
+      };
+      
+      try {
+        const res = await fetch(`${API}/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        show(result, !res.ok);
+      } catch (e) {
+        show({ error: e.message }, true);
+      }
+    }
+    
+    async function test404() {
+      const res = await fetch(`${API}/not-exist`);
+      show(await res.json(), true);
+    }
+    
+    async function testNotFoundUser() {
+      const res = await fetch(`${API}/users/99999`);
+      show(await res.json(), true);
+    }
+    
+    async function testEmptyBody() {
+      const res = await fetch(`${API}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      show(await res.json(), true);
+    }
+    
+    async function testInvalidEmail() {
+      const res = await fetch(`${API}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: '测试', email: 'not-an-email', password: 'Test123' })
+      });
+      show(await res.json(), true);
+    }
+    
+    async function testServerError() {
+      const res = await fetch(`${API}/error-test`);
+      show(await res.json(), true);
+    }
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,17 @@
+{
+  "name": "course-1-express-basic",
+  "version": "1.0.0",
+  "description": "第1课：Express 基础 & RESTful API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": ["express", "restful", "nodejs", "api"],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

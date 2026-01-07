@@ -1,0 +1,19 @@
+{
+  "name": "course-7-file-upload",
+  "version": "1.0.0",
+  "description": "第7课：文件上传",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": ["express", "multer", "file-upload"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.1"
+  }
+}
+

@@ -1,0 +1,18 @@
+{
+  "name": "course-4-validation",
+  "version": "1.0.0",
+  "description": "第4课：数据验证 & 错误处理",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": ["express", "validation", "error-handling", "joi"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "joi": "^17.11.0"
+  }
+}
+

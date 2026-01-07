@@ -1,0 +1,17 @@
+{
+  "name": "course-3-mvc",
+  "version": "1.0.0",
+  "description": "第3课：路由模块化 & MVC 架构",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": ["express", "mvc", "router", "nodejs"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
+

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第2课：中间件测试页面</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      min-height: 100vh;
+      color: #e4e4e7;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #f472b6;
+      font-size: 2rem;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      margin-bottom: 30px;
+    }
+    
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+    
+    @media (max-width: 1200px) {
+      .layout {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    
+    .panel h2 {
+      color: #c084fc;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .btn-get { background: #22c55e; color: white; }
+    .btn-post { background: #3b82f6; color: white; }
+    .btn-put { background: #f59e0b; color: white; }
+    .btn-delete { background: #ef4444; color: white; }
+    .btn-test { background: #8b5cf6; color: white; }
+    
+    .form-group {
+      margin-bottom: 12px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      color: white;
+      font-size: 13px;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #c084fc;
+    }
+    
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+    }
+    
+    .toggle-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .toggle-group label {
+      color: #e4e4e7;
+      font-size: 14px;
+    }
+    
+    #response {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 15px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 12px;
+      min-height: 150px;
+      max-height: 300px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    
+    #terminal {
+      background: #000;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 15px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 12px;
+      min-height: 200px;
+      max-height: 400px;
+      overflow: auto;
+      color: #22c55e;
+    }
+    
+    .terminal-header {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #22c55e; }
+    
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .status-success { background: #22c55e; color: white; }
+    .status-error { background: #ef4444; color: white; }
+    .status-info { background: #3b82f6; color: white; }
+    
+    .middleware-flow {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .flow-step {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+    
+    .flow-step:last-child {
+      border-bottom: none;
+    }
+    
+    .flow-number {
+      width: 24px;
+      height: 24px;
+      background: #c084fc;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    
+    .flow-arrow {
+      color: #c084fc;
+      margin: 5px 0;
+      text-align: center;
+    }
+    
+    .info-box {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      font-size: 13px;
+    }
+    
+    .info-box h3 {
+      color: #c084fc;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    
+    .info-box code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    
+    .api-key-display {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 8px;
+      padding: 10px 15px;
+      margin-bottom: 15px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 第2课：中间件（Middleware）</h1>
+    <p class="subtitle">观察中间件如何处理每一个请求</p>
+    
+    <div class="layout">
+      <!-- 左侧：中间件流程 -->
+      <div>
+        <div class="panel">
+          <h2>📊 中间件执行流程</h2>
+          <div class="middleware-flow">
+            <div class="flow-step">
+              <span class="flow-number">1</span>
+              <span>requestLogger（记录日志）</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+              <span class="flow-number">2</span>
+              <span>requestEnhancer（增强请求）</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+              <span class="flow-number">3</span>
+              <span>corsMiddleware（跨域处理）</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+              <span class="flow-number">4</span>
+              <span>express.json()（解析 JSON）</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+              <span class="flow-number">5</span>
+              <span>simpleAuth（认证检查）</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+              <span class="flow-number">6</span>
+              <span>路由处理器</span>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <h3>💡 前端类比</h3>
+            <p>中间件就像 Vue 的<code>路由守卫</code>或 Axios 的<code>拦截器</code>：</p>
+            <ul style="margin-top: 10px; margin-left: 20px; line-height: 1.8;">
+              <li>Vue Router 的 <code>beforeEach</code> = 全局中间件</li>
+              <li>axios 的 <code>interceptors.request</code> = 请求处理</li>
+              <li><code>next()</code> = 放行到下一步</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="panel" style="margin-top: 20px;">
+          <h2>🔐 认证测试</h2>
+          
+          <div class="toggle-group">
+            <input type="checkbox" id="useAuth" checked>
+            <label for="useAuth">携带 API Key（x-api-key: secret123）</label>
+          </div>
+          
+          <div class="api-key-display" id="authStatus">
+            ✅ 认证已开启：请求将携带 x-api-key 头
+          </div>
+          
+          <button class="btn-test" onclick="testAuth()">测试认证状态</button>
+        </div>
+      </div>
+      
+      <!-- 中间：操作面板 -->
+      <div>
+        <div class="panel">
+          <h2>📡 公开接口（无需认证）</h2>
+          <button class="btn-get" onclick="testRoot()">GET / 首页</button>
+          <button class="btn-get" onclick="getUsers()">GET /users 用户列表</button>
+          <button class="btn-get" onclick="getUserById()">GET /users/:id 单个用户</button>
+        </div>
+        
+        <div class="panel" style="margin-top: 20px;">
+          <h2>🔒 受保护接口（需要认证）</h2>
+          
+          <h3 style="color: #94a3b8; font-size: 13px; margin: 15px 0 10px;">创建用户</h3>
+          <div class="form-group">
+            <label>姓名</label>
+            <input type="text" id="createName" value="新用户">
+          </div>
+          <div class="form-group">
+            <label>邮箱</label>
+            <input type="email" id="createEmail" value="new@test.com">
+          </div>
+          <button class="btn-post" onclick="createUser()">POST /users 创建</button>
+          
+          <h3 style="color: #94a3b8; font-size: 13px; margin: 15px 0 10px;">更新用户</h3>
+          <div class="form-group">
+            <label>用户 ID</label>
+            <input type="number" id="updateId" value="1">
+          </div>
+          <div class="form-group">
+            <label>新姓名</label>
+            <input type="text" id="updateName" value="更新的名字">
+          </div>
+          <button class="btn-put" onclick="updateUser()">PUT /users/:id 更新</button>
+          
+          <h3 style="color: #94a3b8; font-size: 13px; margin: 15px 0 10px;">删除用户</h3>
+          <div class="form-group">
+            <label>用户 ID</label>
+            <input type="number" id="deleteId" value="3">
+          </div>
+          <button class="btn-delete" onclick="deleteUser()">DELETE /users/:id 删除</button>
+        </div>
+      </div>
+      
+      <!-- 右侧：响应结果 -->
+      <div>
+        <div class="panel">
+          <h2>📤 API 响应</h2>
+          <div id="statusBadge"></div>
+          <div id="response">点击按钮测试 API...
+
+观察响应中的字段：
+- requestTime: 由 requestEnhancer 中间件添加
+- customData: 由 requestEnhancer 中间件添加
+- isAuthenticated: 由 simpleAuth 中间件添加</div>
+        </div>
+        
+        <div class="panel" style="margin-top: 20px;">
+          <h2>💻 服务器终端日志</h2>
+          <p style="color: #94a3b8; font-size: 12px; margin-bottom: 10px;">
+            查看终端可以看到 requestLogger 中间件的输出
+          </p>
+          <div id="terminal">
+            <div class="terminal-header">
+              <div class="terminal-dot dot-red"></div>
+              <div class="terminal-dot dot-yellow"></div>
+              <div class="terminal-dot dot-green"></div>
+            </div>
+$ node index.js
+
+🚀 第2课：中间件课程服务器已启动
+   地址: http://localhost:3000
+
+<span style="color: #94a3b8;"># 发送请求后，这里会显示日志模拟</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const API_BASE = 'http://localhost:3000';
+    
+    // 获取认证头
+    function getHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (document.getElementById('useAuth').checked) {
+        headers['x-api-key'] = 'secret123';
+      }
+      return headers;
+    }
+    
+    // 更新认证状态显示
+    document.getElementById('useAuth').addEventListener('change', function() {
+      const statusEl = document.getElementById('authStatus');
+      if (this.checked) {
+        statusEl.innerHTML = '✅ 认证已开启：请求将携带 x-api-key 头';
+        statusEl.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+        statusEl.style.background = 'rgba(34, 197, 94, 0.1)';
+      } else {
+        statusEl.innerHTML = '❌ 认证已关闭：请求不携带认证头';
+        statusEl.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        statusEl.style.background = 'rgba(239, 68, 68, 0.1)';
+      }
+    });
+    
+    // 显示响应结果
+    function showResponse(data, status = 200) {
+      const responseEl = document.getElementById('response');
+      const statusEl = document.getElementById('statusBadge');
+      
+      const isSuccess = status >= 200 && status < 300;
+      const isClientError = status >= 400 && status < 500;
+      
+      let statusClass = 'status-success';
+      if (isClientError) statusClass = 'status-error';
+      else if (!isSuccess) statusClass = 'status-error';
+      
+      statusEl.innerHTML = `<span class="status ${statusClass}">
+        HTTP ${status}
+      </span>`;
+      
+      responseEl.textContent = JSON.stringify(data, null, 2);
+    }
+    
+    // 模拟终端日志
+    function addTerminalLog(method, url, status, duration) {
+      const terminalEl = document.getElementById('terminal');
+      const time = new Date().toLocaleTimeString();
+      const statusColor = status < 300 ? '#22c55e' : '#ef4444';
+      
+      const log = `
+<span style="color: #94a3b8;">[${time}]</span>
+📨 ${method} ${url}
+<span style="color: ${statusColor};">   ✅ 状态: ${status} | 耗时: ${duration}ms</span>
+`;
+      terminalEl.innerHTML += log;
+      terminalEl.scrollTop = terminalEl.scrollHeight;
+    }
+    
+    // 测试根路径
+    async function testRoot() {
+      const start = Date.now();
+      try {
+        const response = await fetch(`${API_BASE}/`, {
+          headers: getHeaders()
+        });
+        const data = await response.json();
+        showResponse(data, response.status);
+        addTerminalLog('GET', '/', response.status, Date.now() - start);
+      } catch (error) {
+        showResponse({ error: error.message }, 500);
+      }
+    }
+    
+    // 测试认证
+    async function testAuth() {
+      const start = Date.now();
+      try {
+        const response = await fetch(`${API_BASE}/`, {
+          headers: getHeaders()
+        });
+        const data = await response.json();
+        showResponse(data, response.status);
+        addTerminalLog('GET', '/', response.status, Date.now() - start);
+        
+        if (data.isAuthenticated) {
+          alert('✅ 认证成功！\n\n你的请求携带了正确的 API Key');
+        } else {
+          alert('❌ 未认证\n\n请勾选"携带 API Key"选项');
+        }
+      } catch (error) {
+        showResponse({ error: error.message }, 500);
+      }
+    }
+    
+    // 获取用户列表
+    async function getUsers() {
+      const start = Date.now();
+      try {
+        const response = await fetch(`${API_BASE}/users`, {
+          headers: getHeaders()
+        });
+        const data = await response.json();
+        showResponse(data, response.status);
+        addTerminalLog('GET', '/users', response.status, Date.now() - start);
+      } catch (error) {
+        showResponse({ error: error.message }, 500);
+      }
+    }
+    
+    // 获取单个用户
+    async function getUserById() {
+      const id = prompt('请输入用户 ID：', '1');
+      if (!id) return;
+      
+      const start = Date.now();
+      try {
+        const response = await fetch(`${API_BASE}/users/${id}`, {
+          headers: getHeaders()
+        });
+        const data = await response.json();
+        showResponse(data, response.status);
+        addTerminalLog('GET', `/users/${id}`, response.status, Date.now() - start);
+      } catch (error) {
+        showResponse({ error: error.message }, 500);
+      }
+    }
+    
+    // 创建用户
+    async function createUser() {
+      const userData = {
+        name: document.getElementById('createName').value,
+        email: document.getElementById('createEmail').value,
+        age: 25,
+        role: 'user'
+      };
+      
+      const start = Date.now();
+      try {
+        const response = await fetch(`${API_BASE}/users`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(userData)
+        });
+        const data = await response.json();
+        showResponse(data, response.status);
+        addTerminalLog('POST', '/users', response.status, Date.now() - start);
+      } catch (error) {
+        showResponse({ error: error.message }, 500);
+      }
+    }
+    
+    // 更新用户
+    async function updateUser() {
+      const id = document.getElementById('updateId').value;
+      const userData = {
+        name: document.getElementById('updateName').value
+      };
+      
+      const start = Date.now();
+      try {
+        const response = await fetch(`${API_BASE}/users/${id}`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify(userData)
+        });
+        const data = await response.json();
+        showResponse(data, response.status);
+        addTerminalLog('PUT', `/users/${id}`, response.status, Date.now() - start);
+      } catch (error) {
+        showResponse({ error: error.message }, 500);
+      }
+    }
+    
+    // 删除用户
+    async function deleteUser() {
+      const id = document.getElementById('deleteId').value;
+      if (!confirm(`确定要删除 ID 为 ${id} 的用户吗？`)) return;
+      
+      const start = Date.now();
+      try {
+        const response = await fetch(`${API_BASE}/users/${id}`, {
+          method: 'DELETE',
+          headers: getHeaders()
+        });
+        
+        if (response.status === 204) {
+          showResponse({ message: '删除成功' }, 204);
+        } else {
+          const data = await response.json();
+          showResponse(data, response.status);
+        }
+        addTerminalLog('DELETE', `/users/${id}`, response.status, Date.now() - start);
+      } catch (error) {
+        showResponse({ error: error.message }, 500);
+      }
+    }
+  </script>
+</body>
+</html>
+

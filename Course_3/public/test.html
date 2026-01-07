@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第3课：MVC 架构测试</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%);
+      min-height: 100vh;
+      color: #e4e4e7;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 { text-align: center; color: #60a5fa; margin-bottom: 10px; }
+    .subtitle { text-align: center; color: #94a3b8; margin-bottom: 30px; }
+    
+    .layout { display: grid; grid-template-columns: 300px 1fr 1fr; gap: 20px; }
+    @media (max-width: 1200px) { .layout { grid-template-columns: 1fr; } }
+    
+    .panel {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .panel h2 { color: #60a5fa; margin-bottom: 15px; font-size: 1.1rem; }
+    
+    .structure-tree { font-family: monospace; font-size: 13px; line-height: 1.8; }
+    .folder { color: #fbbf24; }
+    .file { color: #94a3b8; }
+    .desc { color: #60a5fa; font-style: italic; }
+    
+    .tab-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
+    .tab-btn {
+      padding: 8px 16px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: #94a3b8;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .tab-btn.active { background: #60a5fa; color: white; border-color: #60a5fa; }
+    
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      width: 100%;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+    button:hover { transform: translateY(-2px); }
+    .btn-get { background: #22c55e; color: white; }
+    .btn-post { background: #3b82f6; color: white; }
+    .btn-put { background: #f59e0b; color: white; }
+    .btn-delete { background: #ef4444; color: white; }
+    
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 13px; }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      background: rgba(0,0,0,0.3);
+      color: white;
+    }
+    
+    #response {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 15px;
+      font-family: monospace;
+      font-size: 12px;
+      min-height: 200px;
+      max-height: 400px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    
+    .mvc-flow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 20px 0;
+      padding: 15px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+    }
+    .mvc-box {
+      padding: 15px 20px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 500;
+    }
+    .mvc-route { background: #22c55e; }
+    .mvc-controller { background: #3b82f6; }
+    .mvc-model { background: #f59e0b; }
+    .mvc-arrow { color: #60a5fa; font-size: 24px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📁 第3课：路由模块化 & MVC 架构</h1>
+    <p class="subtitle">理解后端项目的标准目录结构</p>
+    
+    <div class="mvc-flow">
+      <div class="mvc-box mvc-route">Route<br><small>路由层</small></div>
+      <span class="mvc-arrow">→</span>
+      <div class="mvc-box mvc-controller">Controller<br><small>控制器层</small></div>
+      <span class="mvc-arrow">→</span>
+      <div class="mvc-box mvc-model">Model<br><small>模型层</small></div>
+      <span class="mvc-arrow">→</span>
+      <div style="color: #94a3b8;">数据库</div>
+    </div>
+    
+    <div class="layout">
+      <!-- 左侧：项目结构 -->
+      <div class="panel">
+        <h2>📁 项目结构</h2>
+        <div class="structure-tree">
+          <div><span class="folder">my-node-api/</span></div>
+          <div>├── <span class="file">index.js</span> <span class="desc">← 入口文件</span></div>
+          <div>├── <span class="folder">routes/</span> <span class="desc">← 路由层</span></div>
+          <div>│   ├── <span class="file">userRoutes.js</span></div>
+          <div>│   └── <span class="file">productRoutes.js</span></div>
+          <div>├── <span class="folder">controllers/</span> <span class="desc">← 控制器层</span></div>
+          <div>│   ├── <span class="file">userController.js</span></div>
+          <div>│   └── <span class="file">productController.js</span></div>
+          <div>├── <span class="folder">models/</span> <span class="desc">← 模型层</span></div>
+          <div>│   ├── <span class="file">User.js</span></div>
+          <div>│   └── <span class="file">Product.js</span></div>
+          <div>└── <span class="folder">public/</span> <span class="desc">← 静态文件</span></div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: rgba(96,165,250,0.1); border-radius: 8px;">
+          <h3 style="color: #60a5fa; font-size: 14px; margin-bottom: 10px;">💡 前端类比</h3>
+          <p style="font-size: 13px; color: #94a3b8;">
+            这和 Vue 项目结构类似：<br>
+            • routes/ ≈ router/<br>
+            • controllers/ ≈ views/<br>
+            • models/ ≈ stores/
+          </p>
+        </div>
+      </div>
+      
+      <!-- 中间：API 测试 -->
+      <div>
+        <div class="panel">
+          <h2>📡 API 测试</h2>
+          
+          <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('users')">👤 用户 API</button>
+            <button class="tab-btn" onclick="switchTab('products')">📦 产品 API</button>
+          </div>
+          
+          <div id="usersTab">
+            <button class="btn-get" onclick="getUsers()">GET /api/users</button>
+            <button class="btn-get" onclick="getUserById()">GET /api/users/:id</button>
+            
+            <div class="form-group">
+              <label>姓名</label>
+              <input type="text" id="userName" value="新用户">
+            </div>
+            <div class="form-group">
+              <label>邮箱</label>
+              <input type="email" id="userEmail" value="new@test.com">
+            </div>
+            <button class="btn-post" onclick="createUser()">POST /api/users</button>
+            
+            <div class="form-group">
+              <label>更新用户 ID</label>
+              <input type="number" id="updateUserId" value="1">
+            </div>
+            <button class="btn-put" onclick="updateUser()">PUT /api/users/:id</button>
+            
+            <div class="form-group">
+              <label>删除用户 ID</label>
+              <input type="number" id="deleteUserId" value="3">
+            </div>
+            <button class="btn-delete" onclick="deleteUser()">DELETE /api/users/:id</button>
+          </div>
+          
+          <div id="productsTab" style="display: none;">
+            <button class="btn-get" onclick="getProducts()">GET /api/products</button>
+            <button class="btn-get" onclick="getProductById()">GET /api/products/:id</button>
+            
+            <div class="form-group">
+              <label>产品名</label>
+              <input type="text" id="productName" value="新产品">
+            </div>
+            <div class="form-group">
+              <label>价格</label>
+              <input type="number" id="productPrice" value="999">
+            </div>
+            <button class="btn-post" onclick="createProduct()">POST /api/products</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 右侧：响应结果 -->
+      <div class="panel">
+        <h2>📤 响应结果</h2>
+        <div id="response">点击按钮测试 API...</div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const API = 'http://localhost:3000/api';
+    
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('usersTab').style.display = tab === 'users' ? 'block' : 'none';
+      document.getElementById('productsTab').style.display = tab === 'products' ? 'block' : 'none';
+    }
+    
+    function show(data) {
+      document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+    }
+    
+    async function getUsers() {
+      const res = await fetch(`${API}/users`);
+      show(await res.json());
+    }
+    
+    async function getUserById() {
+      const id = prompt('用户 ID:', '1');
+      const res = await fetch(`${API}/users/${id}`);
+      show(await res.json());
+    }
+    
+    async function createUser() {
+      const res = await fetch(`${API}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('userName').value,
+          email: document.getElementById('userEmail').value
+        })
+      });
+      show(await res.json());
+    }
+    
+    async function updateUser() {
+      const id = document.getElementById('updateUserId').value;
+      const res = await fetch(`${API}/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: '已更新的用户' })
+      });
+      show(await res.json());
+    }
+    
+    async function deleteUser() {
+      const id = document.getElementById('deleteUserId').value;
+      await fetch(`${API}/users/${id}`, { method: 'DELETE' });
+      show({ message: '删除成功' });
+    }
+    
+    async function getProducts() {
+      const res = await fetch(`${API}/products`);
+      show(await res.json());
+    }
+    
+    async function getProductById() {
+      const id = prompt('产品 ID:', '1');
+      const res = await fetch(`${API}/products/${id}`);
+      show(await res.json());
+    }
+    
+    async function createProduct() {
+      const res = await fetch(`${API}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('productName').value,
+          price: parseInt(document.getElementById('productPrice').value)
+        })
+      });
+      show(await res.json());
+    }
+  </script>
+</body>
+</html>
+

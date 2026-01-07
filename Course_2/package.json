@@ -1,0 +1,17 @@
+{
+  "name": "course-2-middleware",
+  "version": "1.0.0",
+  "description": "第2课：中间件（Middleware）深入理解",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": ["express", "middleware", "nodejs"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
+
