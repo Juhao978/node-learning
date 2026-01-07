@@ -18,6 +18,8 @@ const requestLogger = (req, res, next) => {
   
   console.log(`\n📨 [${new Date().toLocaleString()}]`);
   console.log(`   ${req.method} ${req.url}`);
+  // 打印请求的ip
+  console.log(`   IP: ${req.ip}`);
   
   // 监听响应完成事件，计算耗时
   res.on('finish', () => {
@@ -87,6 +89,37 @@ const requireAuth = (req, res, next) => {
 };
 
 // ==========================================
+// 【中间件6】请求限流中间件
+// ==========================================
+const requestCounts = new Map();
+
+const rateLimiter = (req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+  const windowMs = 60 * 1000;  // 1分钟
+  const maxRequests = 10;
+  
+  // 获取该 IP 的请求记录
+  const record = requestCounts.get(ip) || { count: 0, startTime: now };
+  
+  // 如果超过时间窗口，重置
+  if (now - record.startTime > windowMs) {
+    record.count = 1;
+    record.startTime = now;
+  } else {
+    record.count++;
+  }
+  
+  requestCounts.set(ip, record);
+  
+  if (record.count > maxRequests) {
+    return res.status(429).json({ error: '请求过于频繁，请稍后再试' });
+  }
+  
+  next();
+};
+
+// ==========================================
 // 注册全局中间件（按顺序执行）
 // ==========================================
 app.use(requestLogger);      // 1. 记录日志
@@ -94,6 +127,7 @@ app.use(requestEnhancer);    // 2. 增强请求
 app.use(corsMiddleware);     // 3. 处理跨域
 app.use(express.json());     // 4. 解析 JSON
 app.use(simpleAuth);         // 5. 认证检查
+app.use(rateLimiter);        // 6. 限流
 
 // 托管静态文件（HTML 测试页面）
 app.use(express.static(path.join(__dirname, 'public')));
