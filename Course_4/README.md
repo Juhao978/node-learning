@@ -85,11 +85,13 @@ const schema = Joi.object({
 });
 
 // 执行验证
-const { error, value } = schema.validate(data);
+// data 通常是 req.body（请求体）、req.query（查询参数）或 req.params（路径参数）
+const { error, value } = schema.validate(req.body);
 
 if (error) {
   // 验证失败
   console.log(error.details);
+  return res.status(400).json({ error: error.message });
 } else {
   // 验证通过，使用 value（已清理的数据）
   console.log(value);
@@ -149,6 +151,161 @@ const schema = Joi.object({
     })
 });
 ```
+
+**messages 的键名是 Joi 错误类型代码**，格式为 `类型.规则`：
+
+| 错误代码 | 触发条件 | 示例 |
+|---------|---------|------|
+| `string.empty` | 字符串为空 `""` | `name: ""` |
+| `string.min` | 长度小于 min | `name: "a"`（min=2） |
+| `string.max` | 长度大于 max | 超过最大长度 |
+| `string.email` | 不是有效邮箱 | `email: "abc"` |
+| `string.pattern.base` | 正则不匹配 | 密码格式错误 |
+| `number.min` | 数值小于 min | `age: 0`（min=1） |
+| `number.max` | 数值大于 max | `age: 200`（max=150） |
+| `number.base` | 不是数字类型 | `age: "abc"` |
+| `any.required` | 必填字段缺失 | 没传这个字段 |
+| `any.only` | 不在 valid() 列表中 | `role: "hacker"` |
+
+**模板变量**：
+
+| 变量 | 说明 |
+|-----|------|
+| `{#limit}` | min/max 的限制值 |
+| `{#value}` | 用户传入的值 |
+| `{#label}` | 字段名 |
+
+```javascript
+.messages({
+  'string.min': '{#label} 至少需要 {#limit} 个字符，你输入了 {#value}'
+})
+// 输出: "name 至少需要 2 个字符，你输入了 a"
+```
+
+---
+
+#### Schema 的其他方法
+
+除了 `validate()`，schema 还有以下方法：
+
+```javascript
+// 1. validateAsync() - 异步验证，返回 Promise
+try {
+  const value = await schema.validateAsync(req.body);
+  // 验证通过
+} catch (error) {
+  // 验证失败
+}
+
+// 2. describe() - 获取 schema 结构描述（调试用）
+console.log(JSON.stringify(schema.describe(), null, 2));
+
+// 3. append() - 添加字段到现有 schema
+const extendedSchema = schema.append({
+  phone: Joi.string()
+});
+
+// 4. keys() - 同 append()，添加或覆盖字段
+const newSchema = schema.keys({
+  name: Joi.string().max(100)  // 覆盖原有的 name 规则
+});
+
+// 5. fork() - 修改特定字段的规则
+const optionalSchema = schema.fork(['name', 'email'], (field) => field.optional());
+// 把 name 和 email 都变成可选的
+```
+
+**常用场景**：
+
+| 方法 | 使用场景 |
+|-----|---------|
+| `validate()` | 同步验证（最常用） |
+| `validateAsync()` | 需要异步自定义验证时 |
+| `keys()` / `append()` | 创建用户时必填，更新时选填 |
+| `fork()` | 复用 schema 但修改部分规则 |
+
+---
+
+#### validate() 方法详解
+
+```javascript
+const { error, value } = schema.validate(data, options);
+```
+
+##### 选项参数（options）
+
+| 选项 | 类型 | 默认值 | 作用 |
+|-----|------|-------|------|
+| `abortEarly` | boolean | `true` | `false` 返回所有错误，`true` 遇到第一个就停止 |
+| `stripUnknown` | boolean | `false` | `true` 移除 schema 中未定义的字段 |
+| `allowUnknown` | boolean | `false` | `true` 允许未知字段存在（但不移除） |
+| `convert` | boolean | `true` | 自动类型转换（如字符串 "123" → 数字 123） |
+
+**常用组合**：
+
+```javascript
+schema.validate(req.body, {
+  abortEarly: false,   // 返回所有错误，方便前端一次性展示
+  stripUnknown: true   // 移除多余字段，防止恶意数据
+});
+```
+
+##### 返回值 - error 对象
+
+验证失败时返回 error 对象：
+
+```javascript
+{
+  name: 'ValidationError',
+  message: '"name" is required. "email" must be a valid email',
+  details: [
+    {
+      message: '"name" is required',    // 错误消息
+      path: ['name'],                   // 错误字段路径
+      type: 'any.required',             // 错误类型
+      context: { key: 'name', label: 'name' }
+    },
+    {
+      message: '"email" must be a valid email',
+      path: ['email'],
+      type: 'string.email',
+      context: { key: 'email', label: 'email', value: 'invalid' }
+    }
+  ]
+}
+```
+
+| 属性 | 说明 |
+|-----|------|
+| `error.message` | 所有错误拼接的字符串 |
+| `error.details` | 错误详情数组 |
+| `error.details[].message` | 单个错误的消息 |
+| `error.details[].path` | 错误字段的路径（支持嵌套对象） |
+| `error.details[].type` | 错误类型（如 `string.min`、`any.required`） |
+
+##### 返回值 - value 对象
+
+验证通过时返回处理后的数据：
+
+```javascript
+// 原始数据
+{ name: '张三', age: '25', hackerField: 'xxx' }
+
+// schema
+Joi.object({
+  name: Joi.string(),
+  age: Joi.number()  // 注意是 number
+})
+
+// value（经过 validate 后）
+{ 
+  name: '张三', 
+  age: 25  // 字符串 '25' 自动转为数字 25（convert: true）
+}
+// hackerField 被移除（stripUnknown: true）
+```
+
+---
 
 ### 🎯 前端类比
 
