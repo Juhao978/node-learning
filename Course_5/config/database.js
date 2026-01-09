@@ -16,15 +16,20 @@
 const { Sequelize } = require('sequelize');
 
 // 创建 Sequelize 实例
-// 本课程使用 SQLite（无需安装数据库服务器）
-// 真实项目中换成 MySQL 连接字符串即可
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './database.sqlite',  // 数据存储文件
+// 使用本地 MySQL 数据库
+const sequelize = new Sequelize('course_5', 'root', 'admin', {
+  host: 'localhost',
+  port: 3306,
+  dialect: 'mysql',
   logging: (sql) => console.log(`📝 SQL: ${sql}`),  // 打印 SQL 语句
   define: {
     timestamps: true,  // 自动添加 createdAt, updatedAt
     underscored: true  // 使用下划线命名（user_name 而不是 userName）
+  },
+  pool: {
+    max: 10,     // 最大连接数
+    min: 0,      // 最小连接数
+    idle: 10000  // 空闲连接超时时间
   }
 });
 
