@@ -100,43 +100,103 @@ axios.interceptors.request.use(config => {
 
 ---
 
-### 3. 密码加密（bcrypt）
+### 3. bcryptjs 库详解
 
-**永远不要明文存储密码！**
+#### 安装
+
+```bash
+pnpm add bcryptjs
+```
+
+> **为什么用 bcryptjs 而不是 bcrypt？**
+> - `bcrypt` 是原生模块，需要编译 C++ 代码，Windows 上可能报错
+> - `bcryptjs` 是纯 JavaScript 实现，无需编译，100% 兼容
+
+#### 基本用法
 
 ```javascript
 const bcrypt = require('bcryptjs');
 
-// 加密密码
+// ==================== 加密密码 ====================
+
+// 方式1：异步（推荐）
 const salt = await bcrypt.genSalt(10);  // 生成盐
 const hashedPassword = await bcrypt.hash('123456', salt);
 // 结果：$2a$10$N9qo8uLOickgx2ZMRZoMy...
 
-// 验证密码
+// 方式2：同步（阻塞，不推荐用于服务器）
+const saltSync = bcrypt.genSaltSync(10);
+const hashedSync = bcrypt.hashSync('123456', saltSync);
+
+// 方式3：一步到位
+const hashed = await bcrypt.hash('123456', 10);  // 自动生成盐
+
+// ==================== 验证密码 ====================
+
+// 异步
 const isMatch = await bcrypt.compare('123456', hashedPassword);
 // 返回：true 或 false
+
+// 同步
+const isMatchSync = bcrypt.compareSync('123456', hashedPassword);
 ```
 
-**为什么用 bcrypt？**
+#### genSalt 的 rounds 参数
 
-1. **单向加密**：无法从哈希值反推密码
-2. **加盐**：相同密码产生不同哈希
-3. **慢速计算**：增加暴力破解难度
+`rounds`（也叫 cost factor）决定加密的计算量：
+
+| rounds | 大约耗时 | 适用场景 |
+|--------|---------|---------|
+| 8 | ~40ms | 开发测试 |
+| 10 | ~100ms | **生产推荐** |
+| 12 | ~400ms | 高安全要求 |
+| 14 | ~1.5s | 极高安全（会影响性能） |
+
+```javascript
+// rounds 越高越安全，但也越慢
+const salt = await bcrypt.genSalt(10);  // 推荐值
+
+// rounds 每增加 1，计算时间翻倍
+// rounds=10 约 100ms，rounds=11 约 200ms
+```
+
+#### 哈希值结构解析
+
+```
+$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
+│ │  │  └─────────────────────────────────────────────────────────┘
+│ │  │                          哈希结果（31字符）
+│ │  └─────────────────────────────────────────────────────────────
+│ │                             盐值（22字符）
+│ └── cost factor（10）
+└──── 算法版本（2a）
+```
+
+#### 为什么用 bcrypt？
+
+| 加密方式 | 安全性 | 说明 |
+|---------|-------|------|
+| 明文存储 | ❌ 极危险 | 数据库泄露 = 密码泄露 |
+| MD5/SHA | ❌ 不安全 | 可通过彩虹表破解 |
+| SHA + 盐 | ⚠️ 一般 | 手动加盐，容易出错 |
+| bcrypt | ✅ 推荐 | 自动加盐，慢速计算，防暴力破解 |
 
 ### 🎯 前端类比
 
-这就像你用 crypto-js 加密敏感数据：
-
 ```javascript
+// 前端：crypto-js 加密（可逆）
 import CryptoJS from 'crypto-js';
 const encrypted = CryptoJS.AES.encrypt('password', 'secret').toString();
-```
+const decrypted = CryptoJS.AES.decrypt(encrypted, 'secret').toString();
 
-但 bcrypt 是**单向的**，无法解密，只能验证。
+// 后端：bcrypt 加密（不可逆）
+// 只能验证，无法解密出原始密码
+const isMatch = await bcrypt.compare(inputPassword, hashedPassword);
+```
 
 ---
 
-### 4. JWT 生成与验证
+### 4. jsonwebtoken 库详解
 
 #### 安装
 
@@ -144,30 +204,183 @@ const encrypted = CryptoJS.AES.encrypt('password', 'secret').toString();
 pnpm add jsonwebtoken
 ```
 
-#### 生成 Token
+#### jwt.sign() - 生成 Token
 
 ```javascript
 const jwt = require('jsonwebtoken');
 
+// 基本用法
 const token = jwt.sign(
-  { userId: 1 },           // payload: 要存储的数据
-  'your-secret-key',       // secret: 签名密钥
-  { expiresIn: '1h' }      // options: 1小时后过期
+  { userId: 1, role: 'admin' },  // payload: 存储的数据
+  'your-secret-key',              // secret: 签名密钥
+  { expiresIn: '1h' }             // options: 选项
 );
 ```
 
-#### 验证 Token
+**sign() 完整选项**：
+
+| 选项 | 类型 | 说明 | 示例 |
+|-----|------|------|------|
+| `expiresIn` | string/number | 过期时间 | `'1h'`, `'7d'`, `3600` |
+| `notBefore` | string/number | 生效时间 | `'10s'`（10秒后生效） |
+| `audience` | string | 接收方标识 | `'my-app'` |
+| `issuer` | string | 签发者标识 | `'auth-server'` |
+| `subject` | string | 主题 | `'user-auth'` |
+| `jwtid` | string | Token 唯一 ID | `uuid()` |
+| `algorithm` | string | 签名算法 | `'HS256'`（默认） |
+
+```javascript
+// 完整选项示例
+const token = jwt.sign(
+  { userId: 1 },
+  process.env.JWT_SECRET,
+  {
+    expiresIn: '1h',           // 1小时后过期
+    issuer: 'my-app',          // 签发者
+    audience: 'my-users',      // 接收者
+    subject: 'authentication', // 主题
+    algorithm: 'HS256'         // 算法
+  }
+);
+```
+
+**时间格式**：
+
+```javascript
+// 字符串格式
+{ expiresIn: '10s' }   // 10秒
+{ expiresIn: '5m' }    // 5分钟
+{ expiresIn: '1h' }    // 1小时
+{ expiresIn: '7d' }    // 7天
+{ expiresIn: '2w' }    // 2周
+
+// 数字格式（秒）
+{ expiresIn: 3600 }    // 1小时
+{ expiresIn: 60 * 60 * 24 * 7 }  // 7天
+```
+
+#### jwt.verify() - 验证 Token
 
 ```javascript
 try {
   const decoded = jwt.verify(token, 'your-secret-key');
-  console.log(decoded);  // { userId: 1, iat: ..., exp: ... }
+  console.log(decoded);
+  // {
+  //   userId: 1,
+  //   iat: 1636943358,  // 签发时间（issued at）
+  //   exp: 1636946958   // 过期时间（expiration）
+  // }
 } catch (error) {
-  if (error.name === 'TokenExpiredError') {
-    console.log('Token 已过期');
-  } else {
-    console.log('Token 无效');
+  console.log(error.name, error.message);
+}
+```
+
+**verify() 选项**：
+
+```javascript
+const decoded = jwt.verify(token, secret, {
+  algorithms: ['HS256'],      // 允许的算法
+  audience: 'my-users',       // 验证接收方
+  issuer: 'my-app',           // 验证签发者
+  ignoreExpiration: false,    // 是否忽略过期
+  clockTolerance: 30          // 时钟容差（秒）
+});
+```
+
+**错误类型**：
+
+| 错误名 | 说明 | 处理方式 |
+|-------|------|---------|
+| `TokenExpiredError` | Token 已过期 | 提示重新登录 / 刷新 Token |
+| `JsonWebTokenError` | Token 无效（格式错误/签名错误） | 提示 Token 无效 |
+| `NotBeforeError` | Token 还未生效 | 提示稍后再试 |
+
+```javascript
+try {
+  const decoded = jwt.verify(token, secret);
+} catch (error) {
+  switch (error.name) {
+    case 'TokenExpiredError':
+      return res.status(401).json({ 
+        error: 'Token 已过期',
+        expiredAt: error.expiredAt 
+      });
+    case 'JsonWebTokenError':
+      return res.status(401).json({ 
+        error: 'Token 无效' 
+      });
+    case 'NotBeforeError':
+      return res.status(401).json({ 
+        error: 'Token 还未生效',
+        date: error.date 
+      });
   }
+}
+```
+
+#### jwt.decode() - 解码（不验证）
+
+```javascript
+// 只解码，不验证签名（不安全，仅用于调试）
+const payload = jwt.decode(token);
+console.log(payload);  // { userId: 1, iat: ..., exp: ... }
+
+// 获取完整信息（包括 header）
+const complete = jwt.decode(token, { complete: true });
+console.log(complete);
+// {
+//   header: { alg: 'HS256', typ: 'JWT' },
+//   payload: { userId: 1, ... },
+//   signature: 'xxx...'
+// }
+```
+
+> ⚠️ **注意**：`decode()` 不验证签名，任何人都可以伪造。只用于调试，不要用于认证逻辑！
+
+#### 签名算法
+
+| 算法 | 类型 | 密钥 | 使用场景 |
+|-----|------|------|---------|
+| HS256 | 对称 | 共享密钥 | 单服务器（推荐） |
+| HS384 | 对称 | 共享密钥 | 更高安全性 |
+| HS512 | 对称 | 共享密钥 | 最高安全性 |
+| RS256 | 非对称 | 公钥/私钥 | 微服务、第三方验证 |
+| ES256 | 非对称 | 公钥/私钥 | 移动端、IoT |
+
+```javascript
+// HS256（默认，推荐单服务器使用）
+const token = jwt.sign(payload, 'shared-secret', { algorithm: 'HS256' });
+
+// RS256（非对称，适合分布式）
+const privateKey = fs.readFileSync('private.key');
+const publicKey = fs.readFileSync('public.key');
+
+const token = jwt.sign(payload, privateKey, { algorithm: 'RS256' });
+const decoded = jwt.verify(token, publicKey, { algorithms: ['RS256'] });
+```
+
+### 🎯 前端类比
+
+```javascript
+// 前端存储和使用 Token
+// 你已经很熟悉了！
+
+// 存储
+localStorage.setItem('token', token);
+
+// 使用
+axios.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// 检查过期（前端解码，不验证）
+const payload = JSON.parse(atob(token.split('.')[1]));
+if (payload.exp * 1000 < Date.now()) {
+  console.log('Token 已过期');
 }
 ```
 
